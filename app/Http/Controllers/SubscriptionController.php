@@ -17,7 +17,13 @@ class SubscriptionController extends Controller
 
     public function subscribe(SubscribeRequest $request, $websiteId)
     {
-        $response = $this->subscriptionService->subscribeUserToWebsite($request->validated, $websiteId);
+        // Validate the request and get the validated data
+        $validatedData = $request->validated();
+
+        // Access the user_id from the validated data
+        $userId = $validatedData['user_id'];
+
+        $response = $this->subscriptionService->subscribeUserToWebsite($userId, $websiteId);
 
         if (isset($response['error'])) {
             return response()->json(['error' => $response['error']], $response['status']);
