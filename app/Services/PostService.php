@@ -4,29 +4,44 @@ namespace App\Services;
 
 use App\Contracts\PostServiceInterface;
 use App\Events\PostCreated;
-use App\Models\Post;
 use App\Models\Website;
+use App\Models\Post;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PostService implements PostServiceInterface
 {
-    public function createPost($websiteId, array $postData)
+    protected $postModel;
+
+    // Inject the Post model
+    public function __construct(Post $postModel)
     {
-     //validating the website
-    $website = Website::find($websiteId);
-    if (!$website) {
-        throw new \Exception("Website not found.");
+        $this->postModel = $postModel;
     }
 
-    // if website is found Create the post
-    $post = new Post();
-    $post->website_id = $websiteId;
-    $post->title = $postData['title'];
-    $post->description = $postData['description'];
-    $post->save();
+    /**
+     * Create a post for a specific website.
+     *
+     * @param int $websiteId The ID of the website.
+     * @param array $postData Data for the new post.
+     * @return Post The newly created post.
+     *
+     * @throws ModelNotFoundException If the website is not found.
+     */
+    public function createPost($websiteId, array $postData)
+    {
+        $website = Website::find($websiteId);
+        if (!$website) {
+            throw new ModelNotFoundException("Website not found.");
+        }
 
-    // Trigger an event after post creation
-    event(new PostCreated($post));
+        $post = $this->postModel->create([
+            'website_id' => $websiteId,
+            'title' => $postData['title'],
+            'description' => $postData['description'],
+        ]);
 
-    return $post;
-   }
+        event(new PostCreated($post));
+
+        return $post;
+    }
 }

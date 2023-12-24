@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SubscribeRequest;
 use App\Services\SubscriptionService;
-
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class SubscriptionController extends Controller
 {
@@ -15,22 +18,26 @@ class SubscriptionController extends Controller
         $this->subscriptionService = $subscriptionService;
     }
 
-    public function subscribe(SubscribeRequest $request, $websiteId)
+    /**
+     * Subscribe a user to a website.
+     *
+     * @param SubscribeRequest $request
+     * @param int $websiteId
+     * @return JsonResponse
+     */
+    public function subscribe(SubscribeRequest $request, $websiteId): JsonResponse
     {
-        // Validate the request and get the validated data
-        $validatedData = $request->validated();
+        try {
+            $response = $this->subscriptionService->subscribeUserToWebsite(
+                $request->validated()['user_id'],
+                $websiteId
+            );
 
-        // Access the user_id from the validated data
-        $userId = $validatedData['user_id'];
-
-        $response = $this->subscriptionService->subscribeUserToWebsite($userId, $websiteId);
-
-        if (isset($response['error'])) {
-            return response()->json(['error' => $response['error']], $response['status']);
+            return response()->json(['message' => 'Subscribed successfully'], ResponseAlias::HTTP_OK);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => $e->getMessage()], ResponseAlias::HTTP_NOT_FOUND);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Internal Server Error'], ResponseAlias::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        return response()->json(['message' => 'Subscribed successfully'], 200);
     }
-
-
 }

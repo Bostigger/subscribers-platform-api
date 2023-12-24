@@ -18,8 +18,8 @@ class PostPublished extends Mailable
     /**
      * Create a new message instance.
      *
-     * @param User $subscriber
-     * @param Post $post
+     * @param User $subscriber Subscriber receiving the email.
+     * @param Post $post Post details to be included in the email.
      */
     public function __construct(User $subscriber, Post $post)
     {
@@ -28,14 +28,14 @@ class PostPublished extends Mailable
     }
 
     /**
-     * Build the message.
+     * Build the email message.
      *
      * @return $this
      */
     public function build()
     {
-        return $this->subject('New Post Published')
-            ->view('emails.published')
+        return $this->subject('New Post Published: ' . $this->post->title)
+            ->view('emails.posts.published')
             ->with([
                 'subscriberName' => $this->subscriber->name,
                 'postTitle' => $this->post->title,

@@ -6,30 +6,47 @@ use App\Contracts\SubscriptionServiceInterface;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Website;
-
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SubscriptionService implements SubscriptionServiceInterface
 {
-    public function subscribeUserToWebsite($userId, $websiteId)
+    protected $subscriptionModel;
+
+    public function __construct(Subscription $subscriptionModel)
+    {
+        $this->subscriptionModel = $subscriptionModel;
+    }
+
+    /**
+     * Subscribe a user to a website.
+     *
+     * @param int $userId The ID of the user.
+     * @param int $websiteId The ID of the website.
+     * @return Subscription The created subscription.
+     *
+     * @throws ModelNotFoundException If the user or website is not found.
+     * @throws \Exception If the user is already subscribed.
+     */
+    public function subscribeUserToWebsite($userId, $websiteId): Subscription
     {
         $user = User::find($userId);
         if (!$user) {
-            return ['error' => 'User not found', 'status' => 404];
+            throw new ModelNotFoundException("User not found.");
         }
 
         $website = Website::find($websiteId);
         if (!$website) {
-            return ['error' => 'Website not found', 'status' => 404];
+            throw new ModelNotFoundException("Website not found.");
         }
 
-        if (Subscription::isAlreadySubscribed($userId, $websiteId)) {
-            return ['error' => 'User already subscribed to this website', 'status' => 409];
+        if ($this->subscriptionModel->isAlreadySubscribed($userId, $websiteId)) {
+            throw new \Exception("User already subscribed to this website.");
         }
 
-        $newSubscription = new Subscription();
-        $newSubscription->user_id = $userId;
-        $newSubscription->website_id = $websiteId;
-        $newSubscription->save();
+        $newSubscription = $this->subscriptionModel->create([
+            'user_id' => $userId,
+            'website_id' => $websiteId,
+        ]);
 
         return $newSubscription;
     }

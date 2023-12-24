@@ -11,6 +11,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class SendPostEmailJob implements ShouldQueue
 {
@@ -22,8 +24,8 @@ class SendPostEmailJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param User $subscriber
-     * @param Post $post
+     * @param User $subscriber Subscriber to whom the email will be sent.
+     * @param Post $post Post details to be sent.
      */
     public function __construct(User $subscriber, Post $post)
     {
@@ -36,9 +38,12 @@ class SendPostEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $subscriber = $this->subscriber;
-        $post = $this->post;
+        try {
+            Mail::to($this->subscriber->email)->send(new PostPublished($this->subscriber, $this->post));
+        } catch (Throwable $e) {
+            // Log error details for troubleshooting
+            Log::error("Failed to send email for Post ID {$this->post->id} to User ID {$this->subscriber->id}: {$e->getMessage()}");
 
-        Mail::to($subscriber->email)->send(new PostPublished($subscriber, $post));
+        }
     }
 }
