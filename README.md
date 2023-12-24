@@ -71,10 +71,7 @@ This API allows users to subscribe to websites and receive notifications for new
   php artisan app:send-emails-to-subscribers
   ```
 
-## Notes
 
-- Ensure to check the API documentation ( Postman) for detailed API usage.
-- The project is configured with basic settings. Adjust `.env` configurations as necessary for your environment.
 
 
 
